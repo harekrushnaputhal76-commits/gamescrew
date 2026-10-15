@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#181512" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Ustaad Mechanic - 3D Unscrew Puzzle</title>
+
+    <!-- Tactile Workshop Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./style.css" />
+
+    <!-- ES6 Import Map for Three.js & Cannon-es -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- Fullscreen 3D WebGL Viewport -->
+    <div id="canvas-container" aria-label="3D Workbench"></div>
+
+    <!-- Mobile App Shell Overlay -->
+    <div id="app-shell">
+        
+        <!-- Top Android App Bar -->
+        <header class="top-bar">
+            <div class="level-chassis-plate">
+                <span class="chassis-rivet left"></span>
+                <div class="level-meta">
+                    <span class="shop-subtitle">USTAAD GARAGE</span>
+                    <div class="level-title-row">
+                        <span class="level-prefix">JOB #</span>
+                        <span id="level-indicator">01</span>
+                    </div>
+                </div>
+                <span class="chassis-rivet right"></span>
+            </div>
+
+            <!-- Center Progress Pill: Remaining Plates -->
+            <div class="job-progress-pill">
+                <div class="progress-header">
+                    <span>IRON PLATES</span>
+                    <strong id="plates-counter">0 / 0</strong>
+                </div>
+                <div class="plate-meter-track">
+                    <div id="plate-meter-fill" class="plate-meter-fill"></div>
+                </div>
+            </div>
+
+            <!-- Right Currency & Audio Actions -->
+            <div class="top-actions">
+                <div class="bolt-wallet" title="Collected Scrap Bolts">
+                    <span class="nut-icon">&#x2B22;</span>
+                    <span id="score-display">0</span>
+                </div>
+                <button id="btn-sound" class="icon-btn" type="button" aria-label="Toggle Sound">
+                    <span id="sound-icon">&#x1F50A;</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Floating Mechanic Toast / Feedback Pill -->
+        <div class="toast-wrapper">
+            <div id="mechanic-toast" class="mechanic-toast">
+                <span class="toast-wrench">&#x1F527;</span>
+                <span id="prompt-text">Tap any exposed bolt to unscrew it</span>
+            </div>
+        </div>
+
+        <!-- Bottom Tactile Mechanic Dock (Android Game Style) -->
+        <footer class="bottom-dock-wrap">
+            <div class="timer-strip">
+                <span>WORK TIME: <strong id="timer-display">00:00</strong></span>
+                <span class="layer-hint">Drag background to orbit &#x2022; Tap bolt to extract</span>
+            </div>
+
+            <nav class="tool-dock" aria-label="Mechanic Tools">
+                <button id="btn-reset" class="tool-slot" type="button">
+                    <span class="tool-badge">FREE</span>
+                    <span class="tool-emoji">&#x1F504;</span>
+                    <span class="tool-name">Retry</span>
+                </button>
+
+                <button id="btn-wd40" class="tool-slot tool-booster" type="button">
+                    <span id="badge-wd40" class="tool-badge booster-count">2</span>
+                    <span class="tool-emoji">&#x1F9F4;</span>
+                    <span class="tool-name">Rust Spray</span>
+                </button>
+
+                <button id="btn-magnet" class="tool-slot tool-booster" type="button">
+                    <span id="badge-magnet" class="tool-badge booster-count">1</span>
+                    <span class="tool-emoji">&#x1F9F2;</span>
+                    <span class="tool-name">Magnet Pull</span>
+                </button>
+
+                <button id="btn-camera" class="tool-slot" type="button">
+                    <span class="tool-emoji">&#x1F3AF;</span>
+                    <span class="tool-name">Center</span>
+                </button>
+
+                <button id="btn-sync" class="tool-slot" type="button">
+                    <span class="tool-emoji">&#x1F3C6;</span>
+                    <span class="tool-name">Ranks</span>
+                </button>
+            </nav>
+        </footer>
+    </div>
+
+    <!-- Victory Bottom Sheet Modal -->
+    <div id="victory-modal" class="sheet-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="stamp-badge">SHABASH USTAAD!</div>
+            <h2 class="sheet-title">Workbench Cleared</h2>
+            <p class="sheet-desc">Every scrap plate dropped clean off the board.</p>
+
+            <div class="receipt-card">
+                <div class="receipt-row">
+                    <span>Clear Time</span>
+                    <strong id="modal-time">00:12</strong>
+                </div>
+                <div class="receipt-row">
+                    <span>Bolts Unscrewed</span>
+                    <strong id="modal-bolts">6</strong>
+                </div>
+                <div class="receipt-row highlight">
+                    <span>Total Scrap Bonus</span>
+                    <strong id="modal-score">+250 &#x2B22;</strong>
+                </div>
+            </div>
+
+            <button id="btn-next-level" class="primary-cta-btn" type="button">
+                NEXT JOB &#x279C;
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaderboard & Cloud Sync Sheet (Firebase Ready) -->
+    <div id="leaderboard-modal" class="sheet-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-header-row">
+                <h2 class="sheet-title">All-India Ustaad Ranks</h2>
+                <button id="btn-close-ranks" class="close-sheet-btn" type="button">&#x2715;</button>
+            </div>
+            <p class="sheet-desc" id="sync-status-text">Local Workshop Profile synced. Ready for Firebase Auth.</p>
+
+            <div id="leaderboard-list" class="leaderboard-list">
+                <!-- Populated dynamically by game.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Initial Splash / Loading Screen -->
+    <div id="loading-screen" class="splash-screen">
+        <div class="splash-card">
+            <div class="nut-loader" aria-hidden="true">&#x2699;</div>
+            <span class="splash-tag">DESI GARAGE PHYSICS</span>
+            <h1 class="splash-title">USTAAD MECHANIC</h1>
+            <p id="loading-status" class="splash-status">Setting up workbench &amp; forging iron plates...</p>
+            <div class="splash-progress-bg">
+                <div id="loading-bar" class="splash-progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Module -->
+    <script type="module" src="./js/game.js"></script>
+</body>
+</html>
